@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.mapsindoors.mapssdk.*
+import com.mapsindoors.mapssdk.errors.MIError
 import com.mapspeople.mapsindoorstemplate.databinding.FragmentRoutingBinding
 
 class RoutingFragment : Fragment(), TextWatcher {
@@ -59,6 +60,11 @@ class RoutingFragment : Fragment(), TextWatcher {
                 binding.list.visibility = View.INVISIBLE
                 binding.listSeparator.visibility = View.VISIBLE
                 binding.toSearchTextField.isHelperTextEnabled = false
+                MapsIndoors.getPositionProvider()?.latestPosition?.point?.let {
+                    var locations = ArrayList<MPLocation>()
+                    locations.add(MPLocation.Builder("myposition").setFloor(0).setName("My Position").setPosition(it).build())
+                    showSearch(locations, null)
+                }
             }else {
                 binding.toSearchTextField.isHelperTextEnabled = true
                 binding.listSeparator.visibility = View.GONE
@@ -71,7 +77,7 @@ class RoutingFragment : Fragment(), TextWatcher {
         binding.toSearchEditText.setOnEditorActionListener { _, i, _ ->
             if (i == EditorInfo.IME_ACTION_SEARCH) {
                 if (binding.toSearchEditText.text?.length!! <= 2) {
-                    binding.toSearchEditText.clearFocus()
+                    //binding.toSearchEditText.clearFocus()
                 }else {
                     val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
                     imm?.hideSoftInputFromWindow(view.windowToken, 0)
@@ -90,6 +96,11 @@ class RoutingFragment : Fragment(), TextWatcher {
                 binding.list.visibility = View.INVISIBLE
                 binding.listSeparator.visibility = View.VISIBLE
                 binding.fromSearchTextField.isHelperTextEnabled = false
+                MapsIndoors.getPositionProvider()?.latestPosition?.point?.let {
+                    var locations = ArrayList<MPLocation>()
+                    locations.add(MPLocation.Builder("myposition").setFloor(0).setName("My Position").setPosition(it).build())
+                    showSearch(locations, null)
+                }
             }else {
                 binding.fromSearchTextField.isHelperTextEnabled = true
                 binding.listSeparator.visibility = View.GONE
@@ -102,7 +113,7 @@ class RoutingFragment : Fragment(), TextWatcher {
         binding.fromSearchEditText.setOnEditorActionListener { _, i, _ ->
             if (i == EditorInfo.IME_ACTION_SEARCH) {
                 if (binding.fromSearchEditText.text?.length!! <= 2) {
-                    binding.fromSearchEditText.clearFocus()
+                    //binding.fromSearchEditText.clearFocus()
                 }else {
                     val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
                     imm?.hideSoftInputFromWindow(view?.windowToken, 0)
@@ -154,6 +165,7 @@ class RoutingFragment : Fragment(), TextWatcher {
         mMapsFragment?.setBottomSheetState(BottomSheetBehavior.STATE_EXPANDED)
 
         binding.fromSearchEditText.requestFocus()
+        binding.fromSearchEditText.onFocusChangeListener.onFocusChange(binding.fromSearchEditText, true)
         val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
         imm?.showSoftInput(binding.fromSearchEditText, InputMethodManager.SHOW_IMPLICIT)
     }
@@ -174,12 +186,6 @@ class RoutingFragment : Fragment(), TextWatcher {
             activity?.runOnUiThread {
                 binding.progressIndicator.visibility = View.GONE
             }
-            binding.list.visibility = View.INVISIBLE
-            binding.listSeparator.visibility = View.VISIBLE
-            binding.bigView.visibility = View.INVISIBLE
-            binding.searchHintText.visibility = View.VISIBLE
-            binding.searchNoResultText.visibility = View.GONE
-            mAdapter.clear()
         }
 
         searchHandler = Handler(Looper.myLooper()!!)
@@ -201,26 +207,38 @@ class RoutingFragment : Fragment(), TextWatcher {
     private fun search(searchText: String) {
         val query = MPQuery.Builder().setQuery(searchText).build()
         val filter = MPFilter.Builder().build()
+        var mpLocation: MPLocation? = null
+        MapsIndoors.getPositionProvider()?.latestPosition?.point?.let {
+            mpLocation = MPLocation.Builder("myposition").setFloor(0).setName("My Position").setPosition(it).build()
+        }
         MapsIndoors.getLocationsAsync(query, filter) { locations, error ->
-            if (error == null && locations?.isNotEmpty() == true) {
-                if (searchingFrom || searchingTo) {
-                    binding.searchHintText.visibility = View.GONE
-                    binding.list.visibility = View.VISIBLE
-                    binding.listSeparator.visibility = View.VISIBLE
-                    binding.searchNoResultText.visibility = View.GONE
-                    mLayoutManager.scrollToPositionWithOffset(0,0)
-                    mAdapter.setLocations(locations)
-                    mAdapter.notifyDataSetChanged()
-                }
-            }else {
-                binding.list.visibility = View.INVISIBLE
-                binding.listSeparator.visibility = View.VISIBLE
-                binding.searchHintText.visibility = View.GONE
-                binding.searchNoResultText.visibility = View.VISIBLE
+            if (mpLocation != null) {
+                locations?.add(0, mpLocation)
             }
+
+            showSearch(locations, error)
             activity?.runOnUiThread {
                 binding.progressIndicator.visibility = View.GONE
             }
+        }
+    }
+
+    private fun showSearch(locations: MutableList<MPLocation>?, error: MIError?) {
+        if (error == null && locations?.isNotEmpty() == true) {
+            if (searchingFrom || searchingTo) {
+                binding.searchHintText.visibility = View.GONE
+                binding.list.visibility = View.VISIBLE
+                binding.listSeparator.visibility = View.VISIBLE
+                binding.searchNoResultText.visibility = View.GONE
+                mLayoutManager.scrollToPositionWithOffset(0,0)
+                mAdapter.setLocations(locations)
+                mAdapter.notifyDataSetChanged()
+            }
+        }else {
+            binding.list.visibility = View.INVISIBLE
+            binding.listSeparator.visibility = View.VISIBLE
+            binding.searchHintText.visibility = View.GONE
+            binding.searchNoResultText.visibility = View.VISIBLE
         }
     }
 
@@ -328,6 +346,11 @@ class RoutingFragment : Fragment(), TextWatcher {
         if (!editable.isNullOrEmpty() && (searchingTo || searchingFrom)) {
             startSearch()
         }else if (editable.isNullOrEmpty()){
+            MapsIndoors.getPositionProvider()?.latestPosition?.point?.let {
+                var locations = ArrayList<MPLocation>()
+                locations.add(MPLocation.Builder("myposition").setFloor(0).setName("My Position").setPosition(it).build())
+                showSearch(locations, null)
+            }
             binding.progressIndicator.visibility = View.GONE
         }
     }

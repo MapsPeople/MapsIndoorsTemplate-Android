@@ -27,6 +27,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mapsindoors.mapssdk.*
 import com.mapsindoors.mapssdk.errors.MIError
 import com.mapspeople.mapsindoorstemplate.databinding.FragmentMapBinding
+import com.mapspeople.mapsindoorstemplate.positioning.GPSPositionProvider
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -60,6 +61,8 @@ class MapsFragment : Fragment(), OnMapReadyCallback, OnRouteResultListener {
 
     private var locationId: String? = null
     private var showDialog: Boolean = true
+
+    private var positioningProvider: GPSPositionProvider? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         // Inflate the layout for this fragment
@@ -182,6 +185,13 @@ class MapsFragment : Fragment(), OnMapReadyCallback, OnRouteResultListener {
                     val building = MapsIndoors.getVenues()?.defaultVenue
                     building?.let {
                         mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(it.latLngBoundingBox!!, 40))
+                    }
+
+                    if (positioningProvider == null) {
+                        positioningProvider = GPSPositionProvider(_context)
+                        MapsIndoors.setPositionProvider(positioningProvider)
+                        MapsIndoors.startPositioning()
+                        mMapControl.showUserPosition(true)
                     }
 
                     if (binding.loadView.visibility == View.VISIBLE) {
@@ -390,6 +400,9 @@ class MapsFragment : Fragment(), OnMapReadyCallback, OnRouteResultListener {
         super.onStart()
         if (this::mMapControl.isInitialized) {
             mMapControl.onStart()
+            positioningProvider?.let {
+                MapsIndoors.startPositioning()
+            }
         }
     }
 
@@ -397,6 +410,9 @@ class MapsFragment : Fragment(), OnMapReadyCallback, OnRouteResultListener {
         super.onStop()
         if (this::mMapControl.isInitialized) {
             mMapControl.onStop()
+            positioningProvider?.let {
+                MapsIndoors.stopPositioning()
+            }
         }
     }
 

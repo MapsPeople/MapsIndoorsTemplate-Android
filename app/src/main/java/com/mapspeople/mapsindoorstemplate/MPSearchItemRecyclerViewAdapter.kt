@@ -31,6 +31,10 @@ class MPSearchItemRecyclerViewAdapter : RecyclerView.Adapter<MPSearchItemRecycle
             Glide.with(context).load(iconUrl).into(holder.icon)
         }
 
+        if (item.name == "My Position") {
+            Glide.with(context).load(R.drawable.ic_my_location).into(holder.icon)
+        }
+
         holder.nameView.text = item.name
 
         if (item.floorName != null && item.building != null) {
