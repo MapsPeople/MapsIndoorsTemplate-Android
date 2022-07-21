@@ -7,7 +7,7 @@
     <string name="powered_by">POWERED BY</string>
     <string name="find_starting_point">Find starting point</string>
     <string name="find_destination">Find destination</string>
-    <string name="search_for_locations_inside_sofi">Search for locations</string>
+    <string name="search_for_locations">Search for locations</string>
     <string name="no_results">No results</string>
     <string name="reverse">reverse</string>
     <string name="accessibility">Accessibility</string>
